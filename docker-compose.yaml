@@ -1,0 +1,55 @@
+# an example of a small docker compose file which is assuming some pre-prequisites
+# to define and manage multiple Docker containers for an Apache Airflow setup and a dbt service
+
+version: '3.8'
+
+services:
+  webserver:
+    image: 123456789012.dkr.ecr.us-west-2.amazonaws.com/my-airflow-webserver:latest  # Replace with your ECR image
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: sqlite:////usr/local/airflow/airflow.db
+      AIRFLOW__CORE__FERNET_KEY: your_fernet_key  # replace with a generated fernet key
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/usr/local/airflow/dags
+      - ./plugins:/usr/local/airflow/plugins
+      - ./airflow.db:/usr/local/airflow/airflow.db  # sqlite database file
+    command: webserver
+    networks:
+      - airflow_net
+
+  scheduler:
+    image: 123456789012.dkr.ecr.us-west-2.amazonaws.com/my-airflow-scheduler:latest  # replace with your ECR image
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: sqlite:////usr/local/airflow/airflow.db
+      AIRFLOW__CORE__FERNET_KEY: your_fernet_key  # replace with a generated fernet key
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+    volumes:
+      - ./dags:/usr/local/airflow/dags
+      - ./plugins:/usr/local/airflow/plugins
+      - ./airflow.db:/usr/local/airflow/airflow.db  # sqlite database file
+    command: scheduler
+    networks:
+      - airflow_net
+
+  dbt:
+    image: 123456789012.dkr.ecr.us-west-2.amazonaws.com/my-dbt:latest  # replace with your ECR image
+    volumes:
+      - ./dbt:/usr/app/dbt  # mount your dbt project
+    networks:
+      - airflow_net
+    depends_on:
+      - webserver
+    entrypoint: ["/bin/sh", "-c", "sleep 10 && dbt run"]  # example command, adjust as necessary
+
+networks:
+  airflow_net:
+    driver: bridge
+
+volumes:
+  airflow_data:
+    driver: local

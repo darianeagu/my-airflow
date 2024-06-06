@@ -1,0 +1,19 @@
+# example
+
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pytest = "*"
+black = "*"
+
+[packages]
+apache-airflow = "*"
+sqlalchemy = "*"
+psycopg2-binary = "*"
+dbt = "*"
+
+[requires]
+python_version = "3.8"

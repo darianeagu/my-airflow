@@ -1,0 +1,42 @@
+# simple example of a CI pipeline for the Airflow project
+# in real life we would have more well defined CI/CD processes
+
+name: Airflow CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  airflow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Deploy Airflow DAGs
+        run: |
+          scp -r dags/* your-airflow-server:/path/to/airflow/dags/
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Tag the release
+        id: tag
+        run: |
+          TAG="airflow-$(date +%Y%m%d%H%M%S)"
+          git tag $TAG
+          git push origin $TAG
